@@ -64,7 +64,7 @@ project_data='{
     "location": "Москва, ул. Тестовая, 1",
     "budget": 100000000,
     "area": 5000,
-    "user_id": 12345
+    "user_id": 1
 }'
 
 response=$(curl -s -w "%{http_code}" -o /tmp/create_project_response.json \
@@ -190,6 +190,7 @@ if [ -f /tmp/test_project_id ]; then
     echo -e "${BLUE}📊 Тест 9: Генерация сценариев для проекта (${project_id})${NC}"
     
     response=$(curl -s -w "%{http_code}" -o /tmp/generate_scenarios_response.json \
+        -X POST \
         "${API_URL}/projects/${project_id}/scenarios/generate/?count=3")
     status_code=$(echo $response | tail -c 4)
     response_body=$(cat /tmp/generate_scenarios_response.json)

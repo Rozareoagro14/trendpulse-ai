@@ -64,7 +64,7 @@ $projectData = @{
     location = "Москва, ул. Тестовая, 1"
     budget = 100000000
     area = 5000
-    user_id = 12345
+    user_id = 1
 } | ConvertTo-Json
 
 try {
