@@ -102,6 +102,7 @@ class Scenario(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
     project = relationship("Project", back_populates="scenarios")
+    reports = relationship("Report", back_populates="scenario")
 
 class Contractor(Base):
     __tablename__ = "contractors"
@@ -163,4 +164,39 @@ class UserRequest(BaseModel):
     investment_budget: Optional[float] = Field(None, description="Бюджет инвестиций")
     timeline: Optional[str] = Field(None, description="Желаемые сроки")
     risk_tolerance: Optional[str] = Field(None, description="Толерантность к риску")
-    preferences: List[str] = Field(default_factory=list, description="Предпочтения пользователя") 
+    preferences: List[str] = Field(default_factory=list, description="Предпочтения пользователя")
+
+class Report(Base):
+    __tablename__ = "reports"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    scenario_id = Column(Integer, ForeignKey("scenarios.id"))
+    report_type = Column(String(100), nullable=False)  # pdf, excel, etc.
+    file_path = Column(String(500), nullable=False)
+    file_size = Column(Integer, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    scenario = relationship("Scenario", back_populates="reports")
+
+class UserSession(Base):
+    __tablename__ = "user_sessions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    telegram_id = Column(Integer, unique=True, index=True)
+    state = Column(String(100), nullable=True)
+    data = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+class MarketData(Base):
+    __tablename__ = "market_data"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    region = Column(String(200), nullable=False)
+    project_type = Column(String(100), nullable=False)
+    construction_cost = Column(Float, nullable=True)  # стоимость строительства за кв.м
+    rental_rate = Column(Float, nullable=True)  # арендная ставка за кв.м
+    vacancy_rate = Column(Float, nullable=True)  # уровень вакантности
+    demand_score = Column(Float, nullable=True)  # оценка спроса
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now()) 

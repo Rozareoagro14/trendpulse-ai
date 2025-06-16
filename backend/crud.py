@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, func
 from sqlalchemy.orm import selectinload
 from typing import List, Optional, Dict, Any
-from .models import User, Project, Scenario, Contractor
+from .models import User, Project, Scenario, Contractor, LandPlot, Report, UserSession, MarketData
 from .schemas import UserCreate, ProjectCreate, ScenarioCreate, ContractorCreate
 
 class UserCRUD:
@@ -57,10 +57,10 @@ class LandPlotCRUD:
         return land_plot
     
     @staticmethod
-    async def get_user_land_plots(db: AsyncSession, user_id: int) -> List[db_models.LandPlot]:
+    async def get_user_land_plots(db: AsyncSession, user_id: int) -> List[LandPlot]:
         """Получить все участки пользователя"""
         result = await db.execute(
-            select(db_models.LandPlot).where(db_models.LandPlot.user_id == user_id)
+            select(LandPlot).where(LandPlot.user_id == user_id)
         )
         return result.scalars().all()
 
@@ -68,29 +68,29 @@ class ScenarioCRUD:
     """CRUD операции для сценариев"""
     
     @staticmethod
-    async def create_scenario(db: AsyncSession, **kwargs) -> db_models.Scenario:
+    async def create_scenario(db: AsyncSession, **kwargs) -> Scenario:
         """Создать новый сценарий"""
-        scenario = db_models.Scenario(**kwargs)
+        scenario = Scenario(**kwargs)
         db.add(scenario)
         await db.commit()
         await db.refresh(scenario)
         return scenario
     
     @staticmethod
-    async def get_scenario_by_id(db: AsyncSession, scenario_id: int) -> Optional[db_models.Scenario]:
+    async def get_scenario_by_id(db: AsyncSession, scenario_id: int) -> Optional[Scenario]:
         """Получить сценарий по ID"""
         result = await db.execute(
-            select(db_models.Scenario).where(db_models.Scenario.id == scenario_id)
+            select(Scenario).where(Scenario.id == scenario_id)
         )
         return result.scalar_one_or_none()
     
     @staticmethod
-    async def get_user_scenarios(db: AsyncSession, user_id: int) -> List[db_models.Scenario]:
+    async def get_user_scenarios(db: AsyncSession, user_id: int) -> List[Scenario]:
         """Получить все сценарии пользователя"""
         result = await db.execute(
-            select(db_models.Scenario)
-            .join(db_models.Project)
-            .where(db_models.Project.user_id == user_id)
+            select(Scenario)
+            .join(Project)
+            .where(Project.user_id == user_id)
         )
         return result.scalars().all()
 
@@ -98,30 +98,30 @@ class ContractorCRUD:
     """CRUD операции для подрядчиков"""
     
     @staticmethod
-    async def create_contractor(db: AsyncSession, **kwargs) -> db_models.Contractor:
+    async def create_contractor(db: AsyncSession, **kwargs) -> Contractor:
         """Создать нового подрядчика"""
-        contractor = db_models.Contractor(**kwargs)
+        contractor = Contractor(**kwargs)
         db.add(contractor)
         await db.commit()
         await db.refresh(contractor)
         return contractor
     
     @staticmethod
-    async def get_all_active_contractors(db: AsyncSession) -> List[db_models.Contractor]:
+    async def get_all_active_contractors(db: AsyncSession) -> List[Contractor]:
         """Получить всех активных подрядчиков"""
         result = await db.execute(
-            select(db_models.Contractor).where(db_models.Contractor.is_active == True)
+            select(Contractor).where(Contractor.is_active == True)
         )
         return result.scalars().all()
     
     @staticmethod
-    async def get_contractors_by_specialization(db: AsyncSession, specializations: List[str]) -> List[db_models.Contractor]:
+    async def get_contractors_by_specialization(db: AsyncSession, specializations: List[str]) -> List[Contractor]:
         """Получить подрядчиков по специализации"""
         result = await db.execute(
-            select(db_models.Contractor)
+            select(Contractor)
             .where(
-                db_models.Contractor.is_active == True,
-                db_models.Contractor.specialization.in_(specializations)
+                Contractor.is_active == True,
+                Contractor.specialization.in_(specializations)
             )
         )
         return result.scalars().all()
@@ -131,9 +131,9 @@ class ReportCRUD:
     
     @staticmethod
     async def create_report(db: AsyncSession, scenario_id: int, report_type: str, 
-                          file_path: str, file_size: Optional[int] = None) -> db_models.Report:
+                          file_path: str, file_size: Optional[int] = None) -> Report:
         """Создать новый отчет"""
-        report = db_models.Report(
+        report = Report(
             scenario_id=scenario_id,
             report_type=report_type,
             file_path=file_path,
@@ -145,10 +145,10 @@ class ReportCRUD:
         return report
     
     @staticmethod
-    async def get_scenario_reports(db: AsyncSession, scenario_id: int) -> List[db_models.Report]:
+    async def get_scenario_reports(db: AsyncSession, scenario_id: int) -> List[Report]:
         """Получить все отчеты для сценария"""
         result = await db.execute(
-            select(db_models.Report).where(db_models.Report.scenario_id == scenario_id)
+            select(Report).where(Report.scenario_id == scenario_id)
         )
         return result.scalars().all()
 
@@ -156,17 +156,17 @@ class UserSessionCRUD:
     """CRUD операции для сессий пользователей"""
     
     @staticmethod
-    async def get_session(db: AsyncSession, telegram_id: int) -> Optional[db_models.UserSession]:
+    async def get_session(db: AsyncSession, telegram_id: int) -> Optional[UserSession]:
         """Получить сессию пользователя"""
         result = await db.execute(
-            select(db_models.UserSession).where(db_models.UserSession.telegram_id == telegram_id)
+            select(UserSession).where(UserSession.telegram_id == telegram_id)
         )
         return result.scalar_one_or_none()
     
     @staticmethod
     async def create_or_update_session(db: AsyncSession, telegram_id: int, 
                                      state: Optional[str] = None, 
-                                     data: Optional[Dict] = None) -> db_models.UserSession:
+                                     data: Optional[Dict] = None) -> UserSession:
         """Создать или обновить сессию пользователя"""
         session = await UserSessionCRUD.get_session(db, telegram_id)
         
@@ -178,7 +178,7 @@ class UserSessionCRUD:
                 session.data = data
         else:
             # Создаем новую сессию
-            session = db_models.UserSession(
+            session = UserSession(
                 telegram_id=telegram_id,
                 state=state,
                 data=data
@@ -204,27 +204,28 @@ class MarketDataCRUD:
     
     @staticmethod
     async def get_market_data(db: AsyncSession, region: str, 
-                            project_type: str) -> Optional[db_models.MarketData]:
-        """Получить рыночные данные для региона и типа проекта"""
+                            project_type: str) -> Optional[MarketData]:
+        """Получить рыночные данные"""
         result = await db.execute(
-            select(db_models.MarketData)
-            .where(db_models.MarketData.region == region)
-            .where(db_models.MarketData.project_type == project_type)
+            select(MarketData).where(
+                MarketData.region == region,
+                MarketData.project_type == project_type
+            )
         )
         return result.scalar_one_or_none()
     
     @staticmethod
     async def create_market_data(db: AsyncSession, region: str, project_type: str,
                                construction_cost: float, rental_rate: float,
-                               vacancy_rate: float, demand_score: float) -> db_models.MarketData:
-        """Создать рыночные данные"""
-        market_data = db_models.MarketData(
+                               vacancy_rate: float, demand_score: float) -> MarketData:
+        """Создать новые рыночные данные"""
+        market_data = MarketData(
             region=region,
             project_type=project_type,
-            construction_cost_per_sqm=construction_cost,
-            rental_rate_per_sqm=rental_rate,
+            construction_cost=construction_cost,
+            rental_rate=rental_rate,
             vacancy_rate=vacancy_rate,
-            market_demand_score=demand_score
+            demand_score=demand_score
         )
         db.add(market_data)
         await db.commit()
@@ -232,24 +233,29 @@ class MarketDataCRUD:
         return market_data
 
 class ProjectCRUD:
+    """CRUD операции для проектов"""
+    
     @staticmethod
-    async def create_project(db: AsyncSession, **kwargs) -> models.Project:
-        project = models.Project(**kwargs)
+    async def create_project(db: AsyncSession, **kwargs) -> Project:
+        """Создать новый проект"""
+        project = Project(**kwargs)
         db.add(project)
         await db.commit()
         await db.refresh(project)
         return project
     
     @staticmethod
-    async def get_project_by_id(db: AsyncSession, project_id: int) -> Optional[models.Project]:
+    async def get_project_by_id(db: AsyncSession, project_id: int) -> Optional[Project]:
+        """Получить проект по ID"""
         result = await db.execute(
-            select(models.Project).where(models.Project.id == project_id)
+            select(Project).where(Project.id == project_id)
         )
         return result.scalar_one_or_none()
     
     @staticmethod
-    async def get_user_projects(db: AsyncSession, user_id: int) -> List[models.Project]:
+    async def get_user_projects(db: AsyncSession, user_id: int) -> List[Project]:
+        """Получить все проекты пользователя"""
         result = await db.execute(
-            select(models.Project).where(models.Project.user_id == user_id)
+            select(Project).where(Project.user_id == user_id)
         )
         return result.scalars().all() 
