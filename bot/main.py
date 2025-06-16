@@ -362,8 +362,8 @@ async def process_project_type(message: types.Message, state: FSMContext):
     type_mapping = {
         "🏠 Жилой": "residential",
         "🏢 Коммерческий": "commercial", 
-        "🏭 Смешанный": "mixed",
-        "🏭 Промышленный": "industrial"
+        "🏭 Промышленный": "industrial",
+        "🏘️ Смешанный": "mixed"
     }
     
     if message.text in type_mapping:
