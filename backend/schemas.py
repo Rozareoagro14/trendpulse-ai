@@ -187,4 +187,15 @@ class UserRequestResponse(BaseModel):
     timeline: Optional[str] = None
     risk_tolerance: Optional[str] = None
     preferences: Optional[List[str]] = None
+    created_at: datetime
+
+# Report schemas
+class ReportResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
+    id: int
+    scenario_id: int
+    report_type: str
+    file_path: str
+    file_size: Optional[int] = None
     created_at: datetime 

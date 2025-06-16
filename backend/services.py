@@ -16,7 +16,7 @@ class UserService:
         self.db = db
     
     async def create_user(self, user_data: UserCreate) -> UserResponse:
-        user = User(**user_data.dict())
+        user = User(**user_data.model_dump())
         self.db.add(user)
         await self.db.commit()
         await self.db.refresh(user)
@@ -33,7 +33,7 @@ class ProjectService:
         self.db = db
     
     async def create_project(self, project_data: ProjectCreate) -> ProjectResponse:
-        project = Project(**project_data.dict())
+        project = Project(**project_data.model_dump())
         self.db.add(project)
         await self.db.commit()
         await self.db.refresh(project)
@@ -58,7 +58,7 @@ class ScenarioService:
         self.db = db
     
     async def create_scenario(self, project_id: int, scenario_data: ScenarioCreate) -> ScenarioResponse:
-        scenario = Scenario(**scenario_data.dict(), project_id=project_id)
+        scenario = Scenario(**scenario_data.model_dump(), project_id=project_id)
         self.db.add(scenario)
         await self.db.commit()
         await self.db.refresh(scenario)
@@ -118,7 +118,7 @@ class ContractorService:
         self.db = db
     
     async def create_contractor(self, contractor_data: ContractorCreate) -> ContractorResponse:
-        contractor = Contractor(**contractor_data.dict())
+        contractor = Contractor(**contractor_data.model_dump())
         self.db.add(contractor)
         await self.db.commit()
         await self.db.refresh(contractor)

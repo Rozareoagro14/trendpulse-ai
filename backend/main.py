@@ -220,7 +220,7 @@ async def create_user(
 ):
     """Создать нового пользователя"""
     try:
-        user = await crud.UserCRUD.create_user(db, **user_data.dict())
+        user = await crud.UserCRUD.create_user(db, **user_data.model_dump())
         return user
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Ошибка создания пользователя: {str(e)}")
