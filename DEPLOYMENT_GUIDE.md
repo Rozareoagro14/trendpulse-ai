@@ -17,8 +17,8 @@ git commit -m "Initial commit: TrendPulse AI MVP v3.0.0"
 
 ### Привязка к удаленному репозиторию
 ```bash
-# Замените YOUR_USERNAME на ваше имя пользователя
-git remote add origin https://github.com/YOUR_USERNAME/trendpulse-ai.git
+# Привязка к репозиторию
+git remote add origin https://github.com/Rozareoagro14/trendpulse-ai.git
 git branch -M main
 git push -u origin main
 ```
@@ -45,8 +45,8 @@ cd /opt/trendpulse-ai
 
 ### Клонирование репозитория
 ```bash
-# Замените YOUR_USERNAME на ваше имя пользователя
-git clone https://github.com/YOUR_USERNAME/trendpulse-ai.git .
+# Клонирование репозитория
+git clone https://github.com/Rozareoagro14/trendpulse-ai.git .
 ```
 
 ### Создание файла .env на сервере
