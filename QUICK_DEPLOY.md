@@ -10,7 +10,8 @@ ssh root@45.142.122.145
 # 2. Установка Git (если не установлен)
 apt update && apt install -y git
 
-# 3. Создание директории и клонирование
+# 3. Очистка и клонирование (если директория уже существует)
+rm -rf /opt/trendpulse-ai
 mkdir -p /opt/trendpulse-ai
 cd /opt/trendpulse-ai
 git clone https://github.com/Rozareoagro14/trendpulse-ai.git .
@@ -33,6 +34,21 @@ EOF
 # 5. Запуск развертывания
 chmod +x deploy.sh
 ./deploy.sh
+```
+
+## Если директория уже существует
+
+```bash
+# Вариант 1: Полная очистка и переустановка
+rm -rf /opt/trendpulse-ai
+mkdir -p /opt/trendpulse-ai
+cd /opt/trendpulse-ai
+git clone https://github.com/Rozareoagro14/trendpulse-ai.git .
+
+# Вариант 2: Обновление существующего репозитория
+cd /opt/trendpulse-ai
+git fetch origin
+git reset --hard origin/main
 ```
 
 ## Проверка работы
