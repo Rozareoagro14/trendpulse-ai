@@ -26,7 +26,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://trendpulse:trendpulse_password@db:5432/trendpulse_db
+      DATABASE_URL: postgresql+asyncpg://trendpulse:trendpulse_password@db:5432/trendpulse_db
       BOT_TOKEN: ${BOT_TOKEN}
     depends_on:
       db:
@@ -40,7 +40,7 @@ services:
     command: >
       sh -c "
         echo '🧪 Запуск тестов...' &&
-        python -m pytest tests/ -v &&
+        python3 -m pytest tests/ -v --tb=short &&
         echo '✅ Тесты завершены' &&
         uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
       "
@@ -64,11 +64,11 @@ services:
     command: >
       sh -c "
         echo '🤖 Ожидание запуска API...' &&
-        sleep 10 &&
+        sleep 15 &&
         echo '🧪 Запуск тестов бота...' &&
-        python -m pytest tests/test_bot.py -v &&
+        python3 -m pytest tests/test_bot.py -v --tb=short &&
         echo '✅ Тесты бота завершены' &&
-        python bot/main.py
+        python3 bot/main.py
       "
 
 volumes:
