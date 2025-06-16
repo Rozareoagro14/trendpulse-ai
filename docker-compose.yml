@@ -3,17 +3,16 @@ version: '3.8'
 services:
   # PostgreSQL база данных
   db:
-    image: postgres:15
+    image: postgres:15-alpine
     environment:
-      POSTGRES_DB: trendpulse_db
       POSTGRES_USER: trendpulse
-      POSTGRES_PASSWORD: trendpulse_password
+      POSTGRES_PASSWORD: trendpulse123
+      POSTGRES_DB: trendpulse_db
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U trendpulse -d trendpulse_db"]
+      test: ["CMD-SHELL", "pg_isready -U trendpulse"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,24 +25,14 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql+asyncpg://trendpulse:trendpulse_password@db:5432/trendpulse_db
-      BOT_TOKEN: ${BOT_TOKEN}
+      - DATABASE_URL=postgresql+asyncpg://trendpulse:trendpulse123@db:5432/trendpulse_db
     depends_on:
       db:
         condition: service_healthy
     volumes:
-      - ./backend:/app/backend
       - ./reports:/app/reports
-      - ./requirements.txt:/app/requirements.txt
-      - ./.env:/app/.env
-      - ./tests:/app/tests
-    command: >
-      sh -c "
-        echo '🧪 Запуск упрощенных тестов API...' &&
-        python3 -m pytest tests/test_api_simple.py -v --tb=short &&
-        echo '✅ Тесты API завершены' &&
-        uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
-      "
+      - ./logs:/app/logs
+    restart: unless-stopped
 
   # Telegram Bot
   bot:
@@ -51,25 +40,13 @@ services:
       context: .
       dockerfile: Dockerfile.bot
     environment:
-      BOT_TOKEN: ${BOT_TOKEN}
-      API_URL: http://backend:8000
+      - BOT_TOKEN=${BOT_TOKEN}
+      - API_URL=http://backend:8000
     depends_on:
       - backend
     volumes:
-      - ./bot:/app/bot
-      - ./backend:/app/backend
-      - ./requirements.txt:/app/requirements.txt
-      - ./.env:/app/.env
-      - ./tests:/app/tests
-    command: >
-      sh -c "
-        echo '🤖 Ожидание запуска API...' &&
-        sleep 15 &&
-        echo '🧪 Запуск тестов бота...' &&
-        python3 -m pytest tests/test_bot_simple.py -v --tb=short &&
-        echo '✅ Тесты бота завершены' &&
-        python3 bot/main.py
-      "
+      - ./logs:/app/logs
+    restart: unless-stopped
 
 volumes:
   postgres_data:
