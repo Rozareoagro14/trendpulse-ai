@@ -209,12 +209,22 @@ async def show_contractors(message: types.Message):
             if response.status_code == 200:
                 contractors = response.json()
                 if contractors:
+                    # Дедупликация по ID подрядчика
+                    unique_contractors = {}
+                    for contractor in contractors:
+                        contractor_id = contractor.get('id')
+                        if contractor_id and contractor_id not in unique_contractors:
+                            unique_contractors[contractor_id] = contractor
+                    
+                    # Берем только уникальных подрядчиков (максимум 5)
+                    unique_contractors_list = list(unique_contractors.values())[:5]
+                    
                     contractors_text = "👷 Доступные подрядчики:\n\n"
-                    for contractor in contractors[:5]:  # Показываем первые 5
+                    for contractor in unique_contractors_list:
                         contractors_text += f"🏢 {contractor['name']}\n"
                         contractors_text += f"🎯 {contractor['specialization']}\n"
                         contractors_text += f"⭐ Рейтинг: {contractor['rating'] or 'Нет'}\n"
-                        contractors_text += f"📞 {contractor['contact_phone'] or 'Не указан'}\n\n"
+                        contractors_text += f"📞 {contractor.get('contact_phone', 'Не указан')}\n\n"
                 else:
                     contractors_text = "Подрядчики не найдены"
             else:
