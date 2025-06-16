@@ -24,10 +24,10 @@ docker-compose ps
 
 # Проверка логов
 echo "📋 Проверяем логи backend..."
-docker-compose logs backend --tail=20
+docker-compose logs backend | tail -20
 
 echo "📋 Проверяем логи бота..."
-docker-compose logs bot --tail=20
+docker-compose logs bot | tail -20
 
 echo "✅ Обновление завершено!"
 echo ""

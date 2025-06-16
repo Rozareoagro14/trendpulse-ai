@@ -237,10 +237,101 @@ async def show_contractors(message: types.Message):
 
 @dp.message(lambda message: message.text == "📈 Сценарии")
 async def show_scenarios(message: types.Message):
-    await message.answer(
-        "📈 Для генерации сценариев сначала создайте проект!",
-        reply_markup=get_main_keyboard()
-    )
+    try:
+        async with httpx.AsyncClient() as client:
+            # Сначала получаем пользователя по telegram_id
+            user_response = await client.get(f"{API_URL}/users/{message.from_user.id}")
+            if user_response.status_code == 404:
+                # Создаем пользователя, если его нет
+                user_data = {
+                    "telegram_id": message.from_user.id,
+                    "username": message.from_user.username,
+                    "first_name": message.from_user.first_name,
+                    "last_name": message.from_user.last_name
+                }
+                user_response = await client.post(f"{API_URL}/users", json=user_data)
+            
+            if user_response.status_code == 200:
+                user = user_response.json()
+                user_id = user["id"]
+                
+                # Получаем проекты пользователя
+                projects_response = await client.get(f"{API_URL}/projects/?user_id={user_id}")
+                if projects_response.status_code == 200:
+                    projects = projects_response.json()
+                    
+                    if not projects:
+                        await message.answer(
+                            "📈 У вас пока нет проектов. Создайте первый проект для генерации сценариев!",
+                            reply_markup=get_main_keyboard()
+                        )
+                        return
+                    
+                    # Собираем все сценарии для всех проектов пользователя
+                    all_scenarios = []
+                    scenarios_text = "📈 Ваши сценарии развития:\n\n"
+                    
+                    for project in projects:
+                        project_scenarios_response = await client.get(f"{API_URL}/projects/{project['id']}/scenarios/")
+                        if project_scenarios_response.status_code == 200:
+                            project_scenarios = project_scenarios_response.json()
+                            
+                            if project_scenarios:
+                                scenarios_text += f"🏗️ Проект: {project['name']}\n"
+                                scenarios_text += f"📍 {project['location'] or 'Не указано'}\n\n"
+                                
+                                for scenario in project_scenarios:
+                                    scenarios_text += f"📊 {scenario['name']}\n"
+                                    scenarios_text += f"💰 ROI: {scenario['roi']}%\n"
+                                    scenarios_text += f"💵 Стоимость: {scenario['estimated_cost']:,.0f} ₽\n"
+                                    scenarios_text += f"⏱️ Время: {scenario['construction_time']}\n"
+                                    scenarios_text += f"⚠️ Риск: {scenario['risk_level']}\n\n"
+                                
+                                scenarios_text += "─" * 30 + "\n\n"
+                                all_scenarios.extend(project_scenarios)
+                    
+                    if all_scenarios:
+                        await message.answer(scenarios_text, reply_markup=get_main_keyboard())
+                    else:
+                        # Если сценариев нет, генерируем их для первого проекта
+                        first_project = projects[0]
+                        await message.answer(
+                            f"📈 Генерируем сценарии для проекта '{first_project['name']}'...",
+                            reply_markup=get_main_keyboard()
+                        )
+                        
+                        # Генерируем сценарии
+                        generate_response = await client.post(
+                            f"{API_URL}/projects/{first_project['id']}/scenarios/generate",
+                            params={"count": 3}
+                        )
+                        
+                        if generate_response.status_code == 200:
+                            await message.answer(
+                                f"✅ Сценарии для проекта '{first_project['name']}' успешно сгенерированы! Нажмите '📈 Сценарии' еще раз для просмотра.",
+                                reply_markup=get_main_keyboard()
+                            )
+                        else:
+                            await message.answer(
+                                "❌ Ошибка генерации сценариев. Попробуйте позже.",
+                                reply_markup=get_main_keyboard()
+                            )
+                else:
+                    await message.answer(
+                        "❌ Ошибка получения проектов",
+                        reply_markup=get_main_keyboard()
+                    )
+            else:
+                await message.answer(
+                    "❌ Ошибка получения данных пользователя",
+                    reply_markup=get_main_keyboard()
+                )
+    except Exception as e:
+        logger.error(f"Ошибка получения сценариев: {e}")
+        await message.answer(
+            "❌ Ошибка получения сценариев",
+            reply_markup=get_main_keyboard()
+        )
 
 @dp.message(lambda message: message.text == "ℹ️ Помощь")
 async def show_help(message: types.Message):
