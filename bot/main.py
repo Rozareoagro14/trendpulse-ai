@@ -62,8 +62,8 @@ def get_project_type_keyboard():
         keyboard=[
             [KeyboardButton(text="🏠 Жилой")],
             [KeyboardButton(text="🏢 Коммерческий")],
-            [KeyboardButton(text="🏭 Смешанный")],
             [KeyboardButton(text="🏭 Промышленный")],
+            [KeyboardButton(text="🏘️ Смешанный")],
             [KeyboardButton(text="🔙 Назад")]
         ],
         resize_keyboard=True

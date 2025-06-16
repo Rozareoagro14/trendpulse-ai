@@ -8,7 +8,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 
 from .database import get_db, engine
-from .models import Base
+from .models import Base, ProjectType, InfrastructureType, ZoneType
 from .schemas import (
     ProjectCreate, ProjectResponse, 
     ScenarioCreate, ScenarioResponse,
@@ -22,6 +22,34 @@ from . import crud
 from . import schemas
 
 load_dotenv()
+
+# Тестовые данные для простых сценариев
+test_scenarios = [
+    {
+        "id": 1,
+        "name": "Жилой комплекс",
+        "roi": 15.5,
+        "description": "Строительство жилого комплекса с 200 квартирами",
+        "estimated_cost": 500000000,
+        "construction_time": "24 месяца"
+    },
+    {
+        "id": 2,
+        "name": "Торговый центр",
+        "roi": 22.3,
+        "description": "Строительство торгового центра площадью 5000 кв.м",
+        "estimated_cost": 300000000,
+        "construction_time": "18 месяцев"
+    },
+    {
+        "id": 3,
+        "name": "Офисный комплекс",
+        "roi": 18.7,
+        "description": "Строительство офисного комплекса класса А",
+        "estimated_cost": 400000000,
+        "construction_time": "20 месяцев"
+    }
+]
 
 app = FastAPI(
     title="TrendPulse AI API",
