@@ -60,7 +60,7 @@ echo ""
 echo -e "${BLUE}📊 Тест 3: Создание проекта${NC}"
 project_data='{
     "name": "Тестовый жилой комплекс",
-    "project_type": "residential_complex",
+    "project_type": "residential",
     "location": "Москва, ул. Тестовая, 1",
     "budget": 100000000,
     "area": 5000,
