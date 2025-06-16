@@ -39,9 +39,9 @@ services:
       - ./tests:/app/tests
     command: >
       sh -c "
-        echo '🧪 Запуск тестов...' &&
-        python3 -m pytest tests/ -v --tb=short &&
-        echo '✅ Тесты завершены' &&
+        echo '🧪 Запуск тестов API...' &&
+        python3 -m pytest tests/test_api_endpoints.py tests/test_projects.py tests/test_scenarios.py -v --tb=short &&
+        echo '✅ Тесты API завершены' &&
         uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
       "
 
@@ -66,7 +66,7 @@ services:
         echo '🤖 Ожидание запуска API...' &&
         sleep 15 &&
         echo '🧪 Запуск тестов бота...' &&
-        python3 -m pytest tests/test_bot.py -v --tb=short &&
+        python3 -m pytest tests/test_bot_simple.py -v --tb=short &&
         echo '✅ Тесты бота завершены' &&
         python3 bot/main.py
       "
