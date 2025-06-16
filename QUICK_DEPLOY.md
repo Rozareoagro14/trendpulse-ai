@@ -39,22 +39,37 @@ chmod +x deploy.sh
 ## Диагностика проблем
 
 ```bash
-# Проверка логов backend
-docker-compose logs backend
+# Проверка логов backend (для перезапускающихся контейнеров)
+docker-compose logs --tail=50 backend
 
-# Проверка логов bot
-docker-compose logs bot
+# Проверка логов bot (для перезапускающихся контейнеров)
+docker-compose logs --tail=50 bot
 
 # Проверка статуса контейнеров
 docker-compose ps
 
-# Проверка содержимого контейнеров
-docker exec -it trendpulse-ai_backend_1 ls -la /app
-docker exec -it trendpulse-ai_bot_1 ls -la /app
+# Проверка логов всех сервисов
+docker-compose logs --tail=20
 
-# Перезапуск с пересборкой
+# Остановка и перезапуск с логами
 docker-compose down
-docker-compose up --build -d
+docker-compose up --build
+```
+
+## Если контейнеры перезапускаются
+
+```bash
+# Проверьте логи для понимания причины
+docker-compose logs backend | tail -20
+docker-compose logs bot | tail -20
+
+# Попробуйте запустить без фонового режима для просмотра ошибок
+docker-compose down
+docker-compose up --build
+
+# Или запустите отдельные сервисы для диагностики
+docker-compose up db -d
+docker-compose up backend --build
 ```
 
 ## Если директория уже существует

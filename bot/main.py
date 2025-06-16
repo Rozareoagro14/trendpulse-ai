@@ -10,7 +10,7 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 import httpx
 from dotenv import load_dotenv
 
-from .handlers import BotHandlers, LandPlotForm
+from handlers import BotHandlers, LandPlotForm
 
 # Загружаем переменные окружения
 load_dotenv()

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
 from enum import Enum
 from sqlalchemy import Column, Integer, String, Float, Text, DateTime, Boolean, ForeignKey, JSON
@@ -123,7 +123,27 @@ class Contractor(Base):
     # Дополнительная информация в JSON формате
     additional_info = Column(JSON, nullable=True)
 
+# Pydantic модели для API
+class ContractorResponse(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    
+    id: int
+    name: str
+    specialization: str
+    experience_years: Optional[int] = None
+    rating: Optional[float] = None
+    contact_phone: Optional[str] = None
+    contact_email: Optional[str] = None
+    website: Optional[str] = None
+    location: Optional[str] = None
+    is_active: bool = True
+    projects_completed: int = 0
+    average_rating: Optional[float] = None
+    created_at: Optional[str] = None
+
 class DevelopmentScenario(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    
     id: int
     name: str
     project_type: ProjectType
@@ -134,7 +154,7 @@ class DevelopmentScenario(BaseModel):
     risk_level: str = Field(..., description="Уровень риска")
     market_demand: str = Field(..., description="Рыночный спрос")
     regulatory_complexity: str = Field(..., description="Сложность регулирования")
-    suitable_contractors: List[Contractor] = Field(default_factory=list)
+    suitable_contractors: List[ContractorResponse] = Field(default_factory=list)
     recommendations: List[str] = Field(default_factory=list)
     pdf_template: str = Field(..., description="Шаблон для генерации PDF")
 
