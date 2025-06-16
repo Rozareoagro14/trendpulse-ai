@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev libxslt1-dev libjpeg-dev libpng-dev \
     libwebp-dev libcairo2-dev libpango1.0-dev \
     libgdk-pixbuf2.0-dev shared-mime-info \
+    fonts-liberation fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app

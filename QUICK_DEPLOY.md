@@ -36,6 +36,27 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
+## Диагностика проблем
+
+```bash
+# Проверка логов backend
+docker-compose logs backend
+
+# Проверка логов bot
+docker-compose logs bot
+
+# Проверка статуса контейнеров
+docker-compose ps
+
+# Проверка содержимого контейнеров
+docker exec -it trendpulse-ai_backend_1 ls -la /app
+docker exec -it trendpulse-ai_bot_1 ls -la /app
+
+# Перезапуск с пересборкой
+docker-compose down
+docker-compose up --build -d
+```
+
 ## Если директория уже существует
 
 ```bash
