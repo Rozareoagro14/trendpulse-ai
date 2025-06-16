@@ -128,15 +128,240 @@ async def process_about_project(callback: types.CallbackQuery):
     """Информация о проекте"""
     await handlers.handle_about_project(callback)
 
-@dp.callback_query(lambda c: c.data.startswith("scenario_detail_"))
-async def process_scenario_detail(callback: types.CallbackQuery):
-    """Детальный просмотр сценария"""
-    await callback.answer("Функция в разработке")
+@dp.callback_query(lambda c: c.data.startswith('scenario_detail_'))
+async def show_scenario_detail(callback_query: types.CallbackQuery):
+    try:
+        scenario_id = int(callback_query.data.split('_')[2])
+        
+        async with httpx.AsyncClient() as client:
+            # Получаем детальную информацию о сценарии
+            scenario_response = await client.get(f"{API_URL}/scenarios/{scenario_id}")
+            
+            if scenario_response.status_code == 200:
+                scenario = scenario_response.json()
+                
+                # Получаем информацию о проекте
+                project_response = await client.get(f"{API_URL}/projects/{scenario['project_id']}")
+                project = project_response.json() if project_response.status_code == 200 else None
+                
+                # Формируем детальное описание сценария
+                detail_text = f"📊 Детальный анализ сценария\n\n"
+                detail_text += f"🏗️ Проект: {project['name'] if project else 'Неизвестно'}\n"
+                detail_text += f"📋 Название: {scenario['name']}\n\n"
+                
+                detail_text += f"💰 Финансовые показатели:\n"
+                detail_text += f"  • ROI: {scenario['roi']}%\n"
+                detail_text += f"  • Стоимость: {scenario['estimated_cost']:,.0f} ₽\n"
+                detail_text += f"  • Срок окупаемости: {scenario['payback_period']} лет\n"
+                detail_text += f"  • Чистая прибыль: {scenario['net_profit']:,.0f} ₽\n\n"
+                
+                detail_text += f"⏱️ Временные параметры:\n"
+                detail_text += f"  • Срок строительства: {scenario['construction_time']}\n"
+                detail_text += f"  • Планируемый запуск: {scenario['planned_start_date']}\n\n"
+                
+                detail_text += f"⚠️ Риски и особенности:\n"
+                detail_text += f"  • Уровень риска: {scenario['risk_level']}\n"
+                detail_text += f"  • Основные риски: {scenario['risk_factors']}\n"
+                detail_text += f"  • Меры по снижению рисков: {scenario['risk_mitigation']}\n\n"
+                
+                detail_text += f"📈 Рыночные факторы:\n"
+                detail_text += f"  • Рыночный спрос: {scenario['market_demand']}\n"
+                detail_text += f"  • Конкуренция: {scenario['competition_level']}\n"
+                detail_text += f"  • Ценовые тренды: {scenario['price_trends']}\n\n"
+                
+                detail_text += f"🔧 Технические детали:\n"
+                detail_text += f"  • Площадь: {scenario['area']} м²\n"
+                detail_text += f"  • Этажность: {scenario['floors']}\n"
+                detail_text += f"  • Материалы: {scenario['materials']}\n"
+                detail_text += f"  • Технологии: {scenario['technologies']}\n\n"
+                
+                detail_text += f"📝 Дополнительная информация:\n"
+                detail_text += f"{scenario['description']}\n\n"
+                
+                # Создаем клавиатуру с действиями
+                keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                    [
+                        InlineKeyboardButton(
+                            text="📊 Создать отчет PDF",
+                            callback_data=f"generate_report_{scenario_id}"
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text="🔄 Сгенерировать альтернативу",
+                            callback_data=f"generate_alternative_{scenario['project_id']}"
+                        )
+                    ],
+                    [
+                        InlineKeyboardButton(
+                            text="⬅️ Назад к сценариям",
+                            callback_data="back_to_scenarios"
+                        )
+                    ]
+                ])
+                
+                await callback_query.message.edit_text(detail_text, reply_markup=keyboard)
+            else:
+                await callback_query.answer("❌ Ошибка получения данных сценария")
+                
+    except Exception as e:
+        logger.error(f"Ошибка показа деталей сценария: {e}")
+        await callback_query.answer("❌ Ошибка показа деталей сценария")
 
-@dp.callback_query(lambda c: c.data == "generate_pdf")
-async def process_generate_pdf(callback: types.CallbackQuery):
-    """Генерация PDF отчета"""
-    await callback.answer("Функция в разработке")
+@dp.callback_query(lambda c: c.data == "generate_new_scenarios")
+async def generate_new_scenarios(callback_query: types.CallbackQuery):
+    try:
+        async with httpx.AsyncClient() as client:
+            # Получаем пользователя
+            user_response = await client.get(f"{API_URL}/users/{callback_query.from_user.id}")
+            if user_response.status_code == 200:
+                user = user_response.json()
+                user_id = user["id"]
+                
+                # Получаем проекты пользователя
+                projects_response = await client.get(f"{API_URL}/projects/?user_id={user_id}")
+                if projects_response.status_code == 200:
+                    projects = projects_response.json()
+                    
+                    await callback_query.message.edit_text(
+                        "🔄 Генерируем новые сценарии для всех проектов...",
+                        reply_markup=None
+                    )
+                    
+                    generated_count = 0
+                    for project in projects:
+                        # Генерируем сценарии
+                        generate_response = await client.post(
+                            f"{API_URL}/projects/{project['id']}/scenarios/generate",
+                            params={"count": 3}
+                        )
+                        
+                        if generate_response.status_code == 200:
+                            generated_count += 1
+                    
+                    await callback_query.message.edit_text(
+                        f"🎉 Сгенерированы новые сценарии для {generated_count} проектов!\n\nНажмите '📈 Сценарии' для просмотра.",
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                            [InlineKeyboardButton(text="📈 Показать сценарии", callback_data="show_scenarios")]
+                        ])
+                    )
+                else:
+                    await callback_query.answer("❌ Ошибка получения проектов")
+            else:
+                await callback_query.answer("❌ Ошибка получения данных пользователя")
+                
+    except Exception as e:
+        logger.error(f"Ошибка генерации новых сценариев: {e}")
+        await callback_query.answer("❌ Ошибка генерации сценариев")
+
+@dp.callback_query(lambda c: c.data == "back_to_scenarios")
+async def back_to_scenarios(callback_query: types.CallbackQuery):
+    try:
+        # Вызываем функцию показа сценариев
+        await show_scenarios(callback_query.message)
+        await callback_query.answer()
+    except Exception as e:
+        logger.error(f"Ошибка возврата к сценариям: {e}")
+        await callback_query.answer("❌ Ошибка возврата к сценариям")
+
+@dp.callback_query(lambda c: c.data.startswith('generate_report_'))
+async def generate_scenario_report(callback_query: types.CallbackQuery):
+    try:
+        scenario_id = int(callback_query.data.split('_')[2])
+        
+        await callback_query.message.edit_text(
+            "📊 Генерируем PDF отчет...",
+            reply_markup=None
+        )
+        
+        async with httpx.AsyncClient() as client:
+            # Генерируем отчет
+            report_response = await client.post(f"{API_URL}/scenarios/{scenario_id}/report")
+            
+            if report_response.status_code == 200:
+                report_data = report_response.json()
+                report_url = report_data.get('report_url')
+                
+                if report_url:
+                    await callback_query.message.edit_text(
+                        f"📊 Отчет готов!\n\nСкачать: {report_url}",
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                            [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_scenarios")]
+                        ])
+                    )
+                else:
+                    await callback_query.message.edit_text(
+                        "❌ Ошибка получения ссылки на отчет",
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                            [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_scenarios")]
+                        ])
+                    )
+            else:
+                await callback_query.message.edit_text(
+                    "❌ Ошибка генерации отчета",
+                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_scenarios")]
+                    ])
+                )
+                
+    except Exception as e:
+        logger.error(f"Ошибка генерации отчета: {e}")
+        await callback_query.answer("❌ Ошибка генерации отчета")
+
+@dp.callback_query(lambda c: c.data.startswith('generate_alternative_'))
+async def generate_alternative_scenario(callback_query: types.CallbackQuery):
+    try:
+        project_id = int(callback_query.data.split('_')[2])
+        
+        await callback_query.message.edit_text(
+            "🔄 Генерируем альтернативный сценарий...",
+            reply_markup=None
+        )
+        
+        async with httpx.AsyncClient() as client:
+            # Генерируем альтернативный сценарий
+            generate_response = await client.post(
+                f"{API_URL}/projects/{project_id}/scenarios/generate",
+                params={"count": 1}
+            )
+            
+            if generate_response.status_code == 200:
+                new_scenarios = generate_response.json()
+                if new_scenarios:
+                    new_scenario = new_scenarios[0]
+                    await callback_query.message.edit_text(
+                        f"🆕 Новый альтернативный сценарий:\n\n"
+                        f"📊 {new_scenario['name']}\n"
+                        f"💰 ROI: {new_scenario['roi']}%\n"
+                        f"💵 Стоимость: {new_scenario['estimated_cost']:,.0f} ₽\n"
+                        f"⏱️ Время: {new_scenario['construction_time']}\n"
+                        f"⚠️ Риск: {new_scenario['risk_level']}",
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                            [InlineKeyboardButton(
+                                text="📊 Подробности",
+                                callback_data=f"scenario_detail_{new_scenario['id']}"
+                            )],
+                            [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_scenarios")]
+                        ])
+                    )
+                else:
+                    await callback_query.message.edit_text(
+                        "❌ Не удалось сгенерировать альтернативный сценарий",
+                        reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                            [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_scenarios")]
+                        ])
+                    )
+            else:
+                await callback_query.message.edit_text(
+                    "❌ Ошибка генерации альтернативного сценария",
+                    reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                        [InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_scenarios")]
+                    ])
+                )
+                
+    except Exception as e:
+        logger.error(f"Ошибка генерации альтернативного сценария: {e}")
+        await callback_query.answer("❌ Ошибка генерации альтернативного сценария")
 
 @dp.message(Command("help"))
 async def cmd_help(message: types.Message):
@@ -291,31 +516,50 @@ async def show_scenarios(message: types.Message):
                                 all_scenarios.extend(project_scenarios)
                     
                     if all_scenarios:
-                        await message.answer(scenarios_text, reply_markup=get_main_keyboard())
+                        # Создаем интерактивную клавиатуру для выбора сценариев
+                        keyboard = InlineKeyboardMarkup(inline_keyboard=[])
+                        
+                        for scenario in all_scenarios:
+                            keyboard.inline_keyboard.append([
+                                InlineKeyboardButton(
+                                    text=f"📊 {scenario['name']} (ROI: {scenario['roi']}%)",
+                                    callback_data=f"scenario_detail_{scenario['id']}"
+                                )
+                            ])
+                        
+                        # Добавляем кнопку для генерации новых сценариев
+                        keyboard.inline_keyboard.append([
+                            InlineKeyboardButton(
+                                text="🔄 Сгенерировать новые сценарии",
+                                callback_data="generate_new_scenarios"
+                            )
+                        ])
+                        
+                        await message.answer(scenarios_text, reply_markup=keyboard)
                     else:
-                        # Если сценариев нет, генерируем их для первого проекта
-                        first_project = projects[0]
+                        # Если сценариев нет, генерируем их для всех проектов
                         await message.answer(
-                            f"📈 Генерируем сценарии для проекта '{first_project['name']}'...",
+                            "📈 Генерируем сценарии для всех ваших проектов...",
                             reply_markup=get_main_keyboard()
                         )
                         
-                        # Генерируем сценарии
-                        generate_response = await client.post(
-                            f"{API_URL}/projects/{first_project['id']}/scenarios/generate",
-                            params={"count": 3}
-                        )
+                        for project in projects:
+                            # Генерируем сценарии
+                            generate_response = await client.post(
+                                f"{API_URL}/projects/{project['id']}/scenarios/generate",
+                                params={"count": 3}
+                            )
+                            
+                            if generate_response.status_code == 200:
+                                await message.answer(
+                                    f"✅ Сценарии для проекта '{project['name']}' сгенерированы!",
+                                    reply_markup=get_main_keyboard()
+                                )
                         
-                        if generate_response.status_code == 200:
-                            await message.answer(
-                                f"✅ Сценарии для проекта '{first_project['name']}' успешно сгенерированы! Нажмите '📈 Сценарии' еще раз для просмотра.",
-                                reply_markup=get_main_keyboard()
-                            )
-                        else:
-                            await message.answer(
-                                "❌ Ошибка генерации сценариев. Попробуйте позже.",
-                                reply_markup=get_main_keyboard()
-                            )
+                        await message.answer(
+                            "🎉 Все сценарии сгенерированы! Нажмите '📈 Сценарии' еще раз для просмотра.",
+                            reply_markup=get_main_keyboard()
+                        )
                 else:
                     await message.answer(
                         "❌ Ошибка получения проектов",
