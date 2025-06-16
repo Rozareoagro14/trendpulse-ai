@@ -162,20 +162,39 @@ async def create_project_start(message: types.Message, state: FSMContext):
 async def show_projects(message: types.Message):
     try:
         async with httpx.AsyncClient() as client:
-            response = await client.get(f"{API_URL}/projects/")
-            if response.status_code == 200:
-                projects = response.json()
-                if projects:
-                    projects_text = "📊 Ваши проекты:\n\n"
-                    for project in projects:
-                        projects_text += f"🏗️ {project['name']}\n"
-                        projects_text += f"📍 {project['location'] or 'Не указано'}\n"
-                        projects_text += f"💰 Бюджет: {project['budget'] or 'Не указан'}\n"
-                        projects_text += f"📅 Создан: {project['created_at'][:10]}\n\n"
+            # Сначала получаем пользователя по telegram_id
+            user_response = await client.get(f"{API_URL}/users/{message.from_user.id}")
+            if user_response.status_code == 404:
+                # Создаем пользователя, если его нет
+                user_data = {
+                    "telegram_id": message.from_user.id,
+                    "username": message.from_user.username,
+                    "first_name": message.from_user.first_name,
+                    "last_name": message.from_user.last_name
+                }
+                user_response = await client.post(f"{API_URL}/users", json=user_data)
+            
+            if user_response.status_code == 200:
+                user = user_response.json()
+                user_id = user["id"]
+                
+                # Получаем проекты пользователя
+                response = await client.get(f"{API_URL}/projects/?user_id={user_id}")
+                if response.status_code == 200:
+                    projects = response.json()
+                    if projects:
+                        projects_text = "📊 Ваши проекты:\n\n"
+                        for project in projects:
+                            projects_text += f"🏗️ {project['name']}\n"
+                            projects_text += f"📍 {project['location'] or 'Не указано'}\n"
+                            projects_text += f"💰 Бюджет: {project['budget'] or 'Не указан'}\n"
+                            projects_text += f"📅 Создан: {project['created_at'][:10]}\n\n"
+                    else:
+                        projects_text = "У вас пока нет проектов. Создайте первый!"
                 else:
-                    projects_text = "У вас пока нет проектов. Создайте первый!"
+                    projects_text = "Ошибка получения проектов"
             else:
-                projects_text = "Ошибка получения проектов"
+                projects_text = "Ошибка получения данных пользователя"
     except Exception as e:
         logger.error(f"Ошибка получения проектов: {e}")
         projects_text = "Ошибка получения проектов"

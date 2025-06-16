@@ -39,10 +39,13 @@ class ProjectService:
         await self.db.refresh(project)
         return ProjectResponse.model_validate(project)
     
-    async def get_projects(self, skip: int = 0, limit: int = 100) -> List[ProjectResponse]:
-        result = await self.db.execute(
-            select(Project).offset(skip).limit(limit)
-        )
+    async def get_projects(self, skip: int = 0, limit: int = 100, user_id: Optional[int] = None) -> List[ProjectResponse]:
+        query = select(Project)
+        if user_id is not None:
+            query = query.where(Project.user_id == user_id)
+        query = query.offset(skip).limit(limit)
+        
+        result = await self.db.execute(query)
         projects = result.scalars().all()
         return [ProjectResponse.model_validate(project) for project in projects]
     

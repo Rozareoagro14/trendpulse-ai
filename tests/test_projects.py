@@ -178,4 +178,38 @@ class TestProjects:
         }
         
         response = await client.post("/projects/", json=zero_budget_data)
-        assert response.status_code == 422  # Validation error 
+        assert response.status_code == 422  # Validation error
+        
+    @pytest.mark.asyncio
+    async def test_get_projects_filtered_by_user(self, client: AsyncClient, sample_project_data):
+        """Тест получения проектов с фильтрацией по пользователю."""
+        # Создаем проект для первого пользователя
+        project1_data = sample_project_data.copy()
+        project1_data["user_id"] = 12345
+        await client.post("/projects/", json=project1_data)
+        
+        # Создаем проект для второго пользователя
+        project2_data = sample_project_data.copy()
+        project2_data["name"] = "Проект пользователя 2"
+        project2_data["user_id"] = 67890
+        await client.post("/projects/", json=project2_data)
+        
+        # Получаем проекты первого пользователя
+        response1 = await client.get("/projects/?user_id=12345")
+        assert response1.status_code == 200
+        projects1 = response1.json()
+        assert len(projects1) == 1
+        assert projects1[0]["user_id"] == 12345
+        
+        # Получаем проекты второго пользователя
+        response2 = await client.get("/projects/?user_id=67890")
+        assert response2.status_code == 200
+        projects2 = response2.json()
+        assert len(projects2) == 1
+        assert projects2[0]["user_id"] == 67890
+        
+        # Получаем все проекты (без фильтра)
+        response_all = await client.get("/projects/")
+        assert response_all.status_code == 200
+        all_projects = response_all.json()
+        assert len(all_projects) >= 2 

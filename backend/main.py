@@ -90,10 +90,11 @@ async def create_project(
 async def get_projects(
     skip: int = 0,
     limit: int = 100,
+    user_id: Optional[int] = None,
     db: AsyncSession = Depends(get_db)
 ):
     service = ProjectService(db)
-    return await service.get_projects(skip=skip, limit=limit)
+    return await service.get_projects(skip=skip, limit=limit, user_id=user_id)
 
 @app.get("/projects/{project_id}", response_model=ProjectResponse)
 async def get_project(
