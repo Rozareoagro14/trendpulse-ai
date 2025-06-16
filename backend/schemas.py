@@ -171,4 +171,25 @@ class ErrorResponse(BaseModel):
 
 class SuccessResponse(BaseModel):
     message: str
-    data: Optional[Any] = None 
+    data: Optional[Any] = None
+
+# UserRequest schemas
+class UserRequestCreate(BaseModel):
+    land_plot: Dict[str, Any]
+    investment_budget: Optional[float] = None
+    timeline: Optional[str] = None
+    risk_tolerance: Optional[str] = None
+    preferences: Optional[List[str]] = None
+
+class UserRequestResponse(BaseModel):
+    id: int
+    user_id: int
+    land_plot: Dict[str, Any]
+    investment_budget: Optional[float] = None
+    timeline: Optional[str] = None
+    risk_tolerance: Optional[str] = None
+    preferences: Optional[List[str]] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True 
