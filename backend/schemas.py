@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 from enum import Enum
@@ -34,13 +34,12 @@ class UserCreate(UserBase):
     pass
 
 class UserResponse(UserBase):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     is_active: bool
     created_at: datetime
     updated_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
 
 # Project schemas
 class ProjectBase(BaseModel):
@@ -55,14 +54,13 @@ class ProjectCreate(ProjectBase):
     user_id: int
 
 class ProjectResponse(ProjectBase):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     user_id: int
     status: str
     created_at: datetime
     updated_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
 
 # Scenario schemas
 class ScenarioBase(BaseModel):
@@ -79,12 +77,11 @@ class ScenarioCreate(ScenarioBase):
     pass
 
 class ScenarioResponse(ScenarioBase):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     project_id: int
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 # Contractor schemas
 class ContractorBase(BaseModel):
@@ -104,12 +101,11 @@ class ContractorCreate(ContractorBase):
     pass
 
 class ContractorResponse(ContractorBase):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     is_active: bool
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 # Simple schemas for backward compatibility
 class SimpleScenario(BaseModel):
@@ -182,6 +178,8 @@ class UserRequestCreate(BaseModel):
     preferences: Optional[List[str]] = None
 
 class UserRequestResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    
     id: int
     user_id: int
     land_plot: Dict[str, Any]
@@ -189,7 +187,4 @@ class UserRequestResponse(BaseModel):
     timeline: Optional[str] = None
     risk_tolerance: Optional[str] = None
     preferences: Optional[List[str]] = None
-    created_at: datetime
-
-    class Config:
-        from_attributes = True 
+    created_at: datetime 

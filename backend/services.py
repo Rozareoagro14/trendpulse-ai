@@ -20,7 +20,7 @@ class UserService:
         self.db.add(user)
         await self.db.commit()
         await self.db.refresh(user)
-        return UserResponse.from_orm(user)
+        return UserResponse.model_validate(user)
     
     async def get_user_by_telegram_id(self, telegram_id: int) -> Optional[User]:
         result = await self.db.execute(
@@ -37,21 +37,21 @@ class ProjectService:
         self.db.add(project)
         await self.db.commit()
         await self.db.refresh(project)
-        return ProjectResponse.from_orm(project)
+        return ProjectResponse.model_validate(project)
     
     async def get_projects(self, skip: int = 0, limit: int = 100) -> List[ProjectResponse]:
         result = await self.db.execute(
             select(Project).offset(skip).limit(limit)
         )
         projects = result.scalars().all()
-        return [ProjectResponse.from_orm(project) for project in projects]
+        return [ProjectResponse.model_validate(project) for project in projects]
     
     async def get_project(self, project_id: int) -> Optional[ProjectResponse]:
         result = await self.db.execute(
             select(Project).where(Project.id == project_id)
         )
         project = result.scalar_one_or_none()
-        return ProjectResponse.from_orm(project) if project else None
+        return ProjectResponse.model_validate(project) if project else None
 
 class ScenarioService:
     def __init__(self, db: AsyncSession):
@@ -62,14 +62,14 @@ class ScenarioService:
         self.db.add(scenario)
         await self.db.commit()
         await self.db.refresh(scenario)
-        return ScenarioResponse.from_orm(scenario)
+        return ScenarioResponse.model_validate(scenario)
     
     async def get_scenarios(self, project_id: int) -> List[ScenarioResponse]:
         result = await self.db.execute(
             select(Scenario).where(Scenario.project_id == project_id)
         )
         scenarios = result.scalars().all()
-        return [ScenarioResponse.from_orm(scenario) for scenario in scenarios]
+        return [ScenarioResponse.model_validate(scenario) for scenario in scenarios]
     
     async def generate_scenarios(self, project_id: int, count: int = 3) -> List[ScenarioResponse]:
         """Генерирует сценарии развития для проекта"""
@@ -111,7 +111,7 @@ class ScenarioService:
         for scenario in scenarios:
             await self.db.refresh(scenario)
         
-        return [ScenarioResponse.from_orm(scenario) for scenario in scenarios]
+        return [ScenarioResponse.model_validate(scenario) for scenario in scenarios]
 
 class ContractorService:
     def __init__(self, db: AsyncSession):
@@ -122,14 +122,14 @@ class ContractorService:
         self.db.add(contractor)
         await self.db.commit()
         await self.db.refresh(contractor)
-        return ContractorResponse.from_orm(contractor)
+        return ContractorResponse.model_validate(contractor)
     
     async def get_contractors(self, skip: int = 0, limit: int = 100) -> List[ContractorResponse]:
         result = await self.db.execute(
             select(Contractor).where(Contractor.is_active == True).offset(skip).limit(limit)
         )
         contractors = result.scalars().all()
-        return [ContractorResponse.from_orm(contractor) for contractor in contractors]
+        return [ContractorResponse.model_validate(contractor) for contractor in contractors]
     
     async def get_contractors_by_specialization(self, specializations: List[str]) -> List[ContractorResponse]:
         result = await self.db.execute(
@@ -139,7 +139,7 @@ class ContractorService:
             )
         )
         contractors = result.scalars().all()
-        return [ContractorResponse.from_orm(contractor) for contractor in contractors]
+        return [ContractorResponse.model_validate(contractor) for contractor in contractors]
 
 class PDFService:
     def __init__(self, db: AsyncSession):
