@@ -5,8 +5,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Конфигурация базы данных
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:password@db:5432/trendpulse")
+# Получение URL базы данных из переменных окружения
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://trendpulse:[ВАШ_ПАРОЛЬ_БАЗЫ]@db:5432/trendpulse_db")
 
 # Создаем async engine
 engine = create_async_engine(DATABASE_URL, echo=True)

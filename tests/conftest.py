@@ -15,7 +15,7 @@ from backend.database import get_db
 from backend.models import Base
 
 # Тестовая база данных
-TEST_DATABASE_URL = "postgresql+asyncpg://test_user:test_password@localhost:5432/test_trendpulse"
+TEST_DATABASE_URL = "postgresql+asyncpg://test_user:[ТЕСТОВЫЙ_ПАРОЛЬ]@localhost:5432/test_trendpulse"
 
 # Создаем тестовый движок
 test_engine = create_async_engine(TEST_DATABASE_URL, echo=True)

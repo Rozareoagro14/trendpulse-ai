@@ -1,12 +1,11 @@
 # PowerShell скрипт для подключения к серверу
-$password = "W5AV!54uq@5EMXLA"
-$server = "root@45.142.122.145"
+$password = "[ВАШ_ПАРОЛЬ_СЕРВЕРА]"
 
-# Создаем процесс SSH
-$process = Start-Process -FilePath "ssh" -ArgumentList $server -NoNewWindow -PassThru -RedirectStandardInput -RedirectStandardOutput -RedirectStandardError
+# Создание процесса SSH
+$process = Start-Process -FilePath "ssh" -ArgumentList "root@trashy-leg" -NoNewWindow -PassThru -RedirectStandardInput
 
-# Отправляем пароль
+# Отправка пароля
 $process.StandardInput.WriteLine($password)
 
-# Ждем завершения
+# Ожидание завершения
 $process.WaitForExit() 

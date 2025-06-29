@@ -1,271 +1,440 @@
-# Руководство по развертыванию TrendPulse AI через Git
+# 🚀 Руководство по развертыванию TrendPulse AI
 
-## 1. Подготовка локального репозитория
+## 📋 Обзор
 
-### Инициализация Git репозитория
-```bash
-# В директории проекта
-git init
-git add .
-git commit -m "Initial commit: TrendPulse AI MVP v3.0.0"
+TrendPulse AI - это система для девелоперов и строителей, состоящая из:
+- **Backend API** (FastAPI)
+- **Telegram Bot** (aiogram)
+- **PostgreSQL Database**
+
+## 🔧 Требования
+
+- Docker и Docker Compose
+- Git
+- Доступ к серверу
+- Telegram Bot Token
+
+## 🏗️ Архитектура
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Telegram Bot  │    │   FastAPI       │    │   PostgreSQL    │
+│   (aiogram)     │◄──►│   Backend       │◄──►│   Database      │
+│                 │    │                 │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-### Создание репозитория на GitHub/GitLab
-1. Зайдите на GitHub.com или GitLab.com
-2. Создайте новый репозиторий: `trendpulse-ai`
-3. НЕ инициализируйте с README (у нас уже есть файлы)
+## 🚀 Быстрый старт
 
-### Привязка к удаленному репозиторию
+### 1. Клонирование репозитория
 ```bash
-# Привязка к репозиторию
-git remote add origin https://github.com/Rozareoagro14/trendpulse-ai.git
-git branch -M main
-git push -u origin main
+git clone https://github.com/Rozareoagro14/trendpulse-ai.git
+cd trendpulse-ai
 ```
 
-## 2. Настройка сервера для автоматического развертывания
-
-### Подключение к серверу
-```bash
-ssh root@45.142.122.145
-# Пароль: W5AV!54uq@5EMXLA
-```
-
-### Установка Git на сервере
-```bash
-apt update
-apt install -y git
-```
-
-### Создание директории для проекта
-```bash
-mkdir -p /opt/trendpulse-ai
-cd /opt/trendpulse-ai
-```
-
-### Клонирование репозитория
-```bash
-# Клонирование репозитория
-git clone https://github.com/Rozareoagro14/trendpulse-ai.git .
-```
-
-### Создание файла .env на сервере
+### 2. Создание .env файла
 ```bash
 cat > .env << 'EOF'
-# Telegram Bot Token
-BOT_TOKEN=7997361131:AAHPvGAAAxwgu5RxQaUOoOvZT79Ig-u3_4w
+# Telegram Bot
+BOT_TOKEN=[ВАШ_ТОКЕН_БОТА]
 
-# База данных
+# Database
 DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/trendpulse
 
-# Окружение
-ENVIRONMENT=production
-
-# API URL (для бота)
-API_URL=http://backend:8000
+# API Settings
+API_HOST=0.0.0.0
+API_PORT=8000
+DEBUG=true
 EOF
 ```
 
-## 3. Создание скрипта автоматического развертывания
-
-### Создание скрипта deploy.sh
+### 3. Запуск системы
 ```bash
-cat > /opt/trendpulse-ai/deploy.sh << 'EOF'
-#!/bin/bash
-
-echo "🚀 Начинаем развертывание TrendPulse AI..."
-
-# Переходим в директорию проекта
-cd /opt/trendpulse-ai
-
-# Получаем последние изменения
-echo "📥 Получаем последние изменения из Git..."
-git pull origin main
-
-# Останавливаем контейнеры
-echo "🛑 Останавливаем контейнеры..."
-docker-compose down
-
-# Очищаем Docker
-echo "🧹 Очищаем Docker..."
-docker system prune -f
-
-# Пересобираем и запускаем
-echo "🔨 Пересобираем и запускаем контейнеры..."
-docker-compose up --build -d
-
-# Ждем запуска
-echo "⏳ Ждем запуска сервисов..."
-sleep 30
-
-# Проверяем статус
-echo "📊 Проверяем статус контейнеров..."
-docker-compose ps
-
-# Проверяем API
-echo "🔍 Проверяем API..."
-curl -f http://localhost:8000/health || echo "❌ API не отвечает"
-
-echo "✅ Развертывание завершено!"
-echo "🌐 API доступен по адресу: http://45.142.122.145:8000"
-echo "🤖 Бот: @trendpulse_aiv2_bot"
-EOF
-
-# Делаем скрипт исполняемым
-chmod +x /opt/trendpulse-ai/deploy.sh
+docker-compose up -d
 ```
 
-## 4. Первоначальное развертывание
-
+### 4. Проверка работы
 ```bash
-# Запускаем скрипт развертывания
-/opt/trendpulse-ai/deploy.sh
+# API
+curl http://localhost:8000/health
+
+# Bot
+# Отправьте /start в Telegram
 ```
 
-## 5. Настройка автоматического развертывания (опционально)
+## 🔑 Получение токена бота
 
-### Создание GitHub Actions (если используете GitHub)
+1. Откройте Telegram
+2. Найдите @BotFather
+3. Отправьте `/newbot`
+4. Следуйте инструкциям:
+   - Введите имя бота: `TrendPulse`
+   - Введите username: `trendpulse_ai_bot`
+5. Скопируйте полученный токен
+6. Добавьте токен в `.env` файл
 
-Создайте файл `.github/workflows/deploy.yml`:
+## 🐳 Docker Compose конфигурация
 
 ```yaml
-name: Deploy to Server
+version: '3.8'
 
-on:
-  push:
-    branches: [ main ]
+services:
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: trendpulse
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
 
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Deploy to server
-      uses: appleboy/ssh-action@v0.1.5
-      with:
-        host: 45.142.122.145
-        username: root
-        password: ${{ secrets.SERVER_PASSWORD }}
-        script: |
-          cd /opt/trendpulse-ai
-          ./deploy.sh
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/trendpulse
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile.bot
+    environment:
+      - BOT_TOKEN=[ВАШ_ТОКЕН_БОТА]
+      - API_URL=http://backend:8000
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
 ```
 
-### Настройка секретов в GitHub
-1. Зайдите в настройки репозитория
-2. Secrets and variables → Actions
-3. Добавьте секрет `SERVER_PASSWORD` со значением `W5AV!54uq@5EMXLA`
+## 📊 API Endpoints
 
-## 6. Рабочий процесс разработки
+### Основные endpoints:
+- `GET /health` - Проверка здоровья
+- `GET /api-info` - Информация об API
+- `GET /projects/` - Список проектов
+- `POST /projects/` - Создание проекта
+- `GET /contractors/` - Список подрядчиков
+- `GET /scenarios/` - Список сценариев
 
-### Локальная разработка
+### Примеры запросов:
 ```bash
-# Внесите изменения в код
-git add .
-git commit -m "Описание изменений"
-git push origin main
+# Проверка здоровья
+curl http://localhost:8000/health
+
+# Создание проекта
+curl -X POST http://localhost:8000/projects/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Жилой комплекс",
+    "description": "Современный жилой комплекс",
+    "project_type": "residential",
+    "location": "Москва",
+    "budget": 50000000,
+    "area": 5000
+  }'
+
+# Получение проектов
+curl http://localhost:8000/projects/
+
+# Получение подрядчиков
+curl http://localhost:8000/contractors/
 ```
 
-### Автоматическое развертывание
-После push в main:
-- GitHub Actions автоматически развернет на сервере (если настроено)
-- Или выполните вручную: `ssh root@45.142.122.145 "cd /opt/trendpulse-ai && ./deploy.sh"`
+## 🤖 Telegram Bot
 
-## 7. Полезные команды для управления
+### Команды:
+- `/start` - Начало работы
+- `/projects` - Мои проекты
+- `/contractors` - Подрядчики
+- `/scenarios` - Сценарии
+- `/help` - Помощь
 
-### Обновление на сервере
+### Настройка:
+1. Создайте бота через @BotFather
+2. Получите токен
+3. Добавьте токен в `.env`
+4. Перезапустите контейнеры
+
+## 🔍 Мониторинг и логи
+
+### Просмотр логов:
 ```bash
-ssh root@45.142.122.145
-cd /opt/trendpulse-ai
-./deploy.sh
-```
+# Все контейнеры
+docker-compose logs
 
-### Просмотр логов
-```bash
-ssh root@45.142.122.145
-cd /opt/trendpulse-ai
+# Только backend
+docker-compose logs backend
+
+# Только bot
+docker-compose logs bot
+
+# Следить за логами
 docker-compose logs -f
 ```
 
-### Перезапуск сервисов
+### Проверка статуса:
 ```bash
-ssh root@45.142.122.145
-cd /opt/trendpulse-ai
-docker-compose restart
-```
-
-### Проверка статуса
-```bash
-ssh root@45.142.122.145
-cd /opt/trendpulse-ai
+# Статус контейнеров
 docker-compose ps
+
+# Использование ресурсов
+docker stats
 ```
 
-## 8. Структура репозитория
+## 🛠️ Устранение неполадок
 
-```
-trendpulse-ai/
-├── backend/
-│   ├── __init__.py
-│   ├── main.py
-│   ├── models.py
-│   ├── schemas.py
-│   ├── services.py
-│   ├── database.py
-│   └── crud.py
-├── bot/
-│   ├── __init__.py
-│   ├── main.py
-│   └── handlers.py
-├── requirements.txt
-├── docker-compose.yml
-├── Dockerfile.backend
-├── Dockerfile.bot
-├── .env.example
-├── .gitignore
-├── README.md
-└── deploy.sh
+### Проблема: Контейнеры не запускаются
+```bash
+# Проверьте логи
+docker-compose logs
+
+# Пересоберите образы
+docker-compose build --no-cache
+
+# Удалите volumes и пересоздайте
+docker-compose down -v
+docker-compose up -d
 ```
 
-## 9. Безопасность
+### Проблема: База данных не подключается
+```bash
+# Проверьте переменные окружения
+docker-compose exec backend env | grep DATABASE
 
-### Файл .env.example
-Создайте файл `.env.example` с примером переменных окружения (без реальных токенов):
+# Проверьте доступность базы
+docker-compose exec backend ping db
+
+# Проверьте логи базы
+docker-compose logs db
+```
+
+### Проблема: Бот не отвечает
+```bash
+# Проверьте токен
+docker-compose exec bot env | grep BOT_TOKEN
+
+# Проверьте подключение к API
+docker-compose exec bot ping backend
+
+# Проверьте логи бота
+docker-compose logs bot
+```
+
+### Проблема: API не отвечает
+```bash
+# Проверьте порты
+netstat -tlnp | grep 8000
+
+# Проверьте логи backend
+docker-compose logs backend
+
+# Перезапустите backend
+docker-compose restart backend
+```
+
+## 📝 Полезные команды
 
 ```bash
-cat > .env.example << 'EOF'
-# Telegram Bot Token
-BOT_TOKEN=your_bot_token_here
+# Остановка системы
+docker-compose down
 
-# База данных
+# Перезапуск
+docker-compose restart
+
+# Обновление кода
+git pull
+docker-compose build
+docker-compose up -d
+
+# Очистка Docker
+docker system prune -a
+
+# Резервное копирование базы
+docker-compose exec db pg_dump -U postgres trendpulse > backup.sql
+
+# Восстановление базы
+docker-compose exec -T db psql -U postgres trendpulse < backup.sql
+
+# Просмотр переменных окружения
+docker-compose exec backend env
+docker-compose exec bot env
+```
+
+## 🔒 Безопасность
+
+### Рекомендации:
+1. Измените пароли по умолчанию
+2. Используйте HTTPS в продакшене
+3. Ограничьте доступ к портам
+4. Регулярно обновляйте зависимости
+5. Мониторьте логи
+
+### Переменные окружения для продакшена:
+```env
+DEBUG=false
+LOG_LEVEL=INFO
+SECRET_KEY=[СЛОЖНЫЙ_СЕКРЕТНЫЙ_КЛЮЧ]
+DATABASE_URL=[ПРОДАКШЕН_URL_БАЗЫ]
+BOT_TOKEN=[ВАШ_ТОКЕН_БОТА]
+```
+
+## 🚀 Развертывание на сервере
+
+### 1. Подключение к серверу
+```bash
+ssh root@[IP_СЕРВЕРА]
+# Пароль: [СКРЫТО]
+```
+
+### 2. Установка зависимостей
+```bash
+# Обновление системы
+apt update && apt upgrade -y
+
+# Установка Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sh get-docker.sh
+
+# Установка Docker Compose
+curl -L "https://github.com/docker/compose/releases/download/v2.20.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+```
+
+### 3. Клонирование проекта
+```bash
+cd /opt
+git clone https://github.com/Rozareoagro14/trendpulse-ai.git
+cd trendpulse-ai
+```
+
+### 4. Создание .env файла
+```bash
+cat > .env << 'EOF'
+BOT_TOKEN=[ВАШ_ТОКЕН_БОТА]
 DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/trendpulse
-
-# Окружение
-ENVIRONMENT=production
-
-# API URL (для бота)
-API_URL=http://backend:8000
+API_HOST=0.0.0.0
+API_PORT=8000
+DEBUG=false
 EOF
 ```
 
-### Добавление .env в .gitignore
-Убедитесь, что `.env` добавлен в `.gitignore`, чтобы токены не попали в репозиторий.
-
-## 10. Мониторинг и логирование
-
-### Настройка логирования
+### 5. Запуск системы
 ```bash
-# Создание директорий для логов
-mkdir -p /opt/trendpulse-ai/logs
-mkdir -p /opt/trendpulse-ai/reports
+docker-compose up -d
 ```
 
-### Просмотр логов в реальном времени
+### 6. Проверка работы
 ```bash
-ssh root@45.142.122.145
+# Проверка API
+curl http://localhost:8000/health
+
+# Проверка статуса контейнеров
+docker-compose ps
+```
+
+## 🔄 Обновление системы
+
+### Автоматическое обновление:
+```bash
+# Создайте скрипт обновления
+cat > update.sh << 'EOF'
+#!/bin/bash
 cd /opt/trendpulse-ai
-docker-compose logs -f backend
-docker-compose logs -f bot
+git pull
+docker-compose build
+docker-compose up -d
+EOF
+
+chmod +x update.sh
 ```
 
-Теперь у вас есть полноценная система развертывания через Git! 🚀 
+### Ручное обновление:
+```bash
+cd /opt/trendpulse-ai
+git pull
+docker-compose build
+docker-compose up -d
+```
+
+## 📊 Мониторинг в продакшене
+
+### Настройка логирования:
+```bash
+# Создание директории для логов
+mkdir -p /opt/trendpulse-ai/logs
+
+# Настройка ротации логов
+cat > /etc/logrotate.d/trendpulse << 'EOF'
+/opt/trendpulse-ai/logs/*.log {
+    daily
+    missingok
+    rotate 7
+    compress
+    delaycompress
+    notifempty
+    create 644 root root
+}
+EOF
+```
+
+### Мониторинг ресурсов:
+```bash
+# Создание скрипта мониторинга
+cat > monitor.sh << 'EOF'
+#!/bin/bash
+echo "=== TrendPulse AI Status ==="
+echo "Date: $(date)"
+echo "CPU: $(top -bn1 | grep "Cpu(s)" | awk '{print $2}' | cut -d'%' -f1)%"
+echo "Memory: $(free -m | awk 'NR==2{printf "%.2f%%", $3*100/$2}')"
+echo "Disk: $(df -h | awk '$NF=="/"{printf "%s", $5}')"
+echo "=== Docker Status ==="
+docker-compose ps
+echo "=== API Health ==="
+curl -s http://localhost:8000/health || echo "API недоступен"
+EOF
+
+chmod +x monitor.sh
+```
+
+## 🆘 Поддержка
+
+### Полезные команды для диагностики:
+```bash
+# Проверка системы
+docker system df
+docker images
+docker ps -a
+
+# Проверка сети
+docker network ls
+docker network inspect trendpulse-ai_default
+
+# Проверка volumes
+docker volume ls
+docker volume inspect trendpulse-ai_postgres_data
+
+# Проверка логов
+docker-compose logs --tail=100
+```
+
+### Контакты для поддержки:
+- GitHub Issues: https://github.com/Rozareoagro14/trendpulse-ai/issues
+- Документация: README.md
+
+## 🎯 Следующие шаги
+
+После успешного развертывания:
+1. Настройте SSL сертификат
+2. Настройте резервное копирование
+3. Настройте мониторинг
+4. Добавьте подрядчиков
+5. Создайте первый проект 

@@ -1,53 +1,56 @@
-#!/bin/bash
+#!/usr/bin/expect -f
 
 # Скрипт для автоматического подключения к серверу
-SERVER="root@45.142.122.145"
-PASSWORD="W5AV!54uq@5EMXLA"
+# Использование: ./connect_server.sh
 
-# Используем expect для автоматического ввода пароля
-expect << EOF
-spawn ssh $SERVER
+# Пароль сервера (замените на ваш)
+PASSWORD="[ВАШ_ПАРОЛЬ_СЕРВЕРА]"
+
+# Подключение к серверу
+spawn ssh root@trashy-leg
+
+# Ожидание запроса пароля
 expect "password:"
 send "$PASSWORD\r"
-expect "$"
+
+# Ожидание приглашения командной строки
+expect "root@trashy-leg"
+
+# Переход в директорию проекта
 send "cd /opt/trendpulse-ai\r"
-expect "$"
-send "ls -la\r"
-expect "$"
-send "cat > .env << 'EOF'\r"
-expect "$"
-send "# Telegram Bot Token\r"
-expect "$"
-send "BOT_TOKEN=7997361131:AAHPvGAAAxwgu5RxQaUOoOvZT79Ig-u3_4w\r"
-expect "$"
-send "\r"
-expect "$"
-send "# База данных\r"
-expect "$"
-send "DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/trendpulse\r"
-expect "$"
-send "\r"
-expect "$"
-send "# Окружение\r"
-expect "$"
-send "ENVIRONMENT=production\r"
-expect "$"
-send "\r"
-expect "$"
-send "# API URL (для бота)\r"
-expect "$"
-send "API_URL=http://backend:8000\r"
-expect "$"
-send "EOF\r"
-expect "$"
-send "docker-compose down\r"
-expect "$"
-send "docker system prune -f\r"
-expect "$"
-send "docker-compose up --build -d\r"
-expect "$"
+
+# Проверка статуса
 send "docker-compose ps\r"
-expect "$"
-send "docker-compose logs -f\r"
-interact
-EOF 
+
+# Проверка API
+send "curl -s http://localhost:8000/health\r"
+
+# Переход в директорию проекта
+send "cd /opt/trendpulse-ai\r"
+
+# Создание .env файла с правильными настройками
+send "cat > .env << 'EOF'\r"
+send "# Telegram Bot Token\r"
+send "BOT_TOKEN=[ВАШ_ТОКЕН_БОТА]\r"
+send "\r"
+send "# База данных\r"
+send "DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/trendpulse\r"
+send "\r"
+send "# Окружение\r"
+send "ENVIRONMENT=production\r"
+send "\r"
+send "# API URL (для бота)\r"
+send "API_URL=http://backend:8000\r"
+send "EOF\r"
+
+# Перезапуск контейнеров
+send "docker-compose restart\r"
+
+# Проверка статуса после перезапуска
+send "docker-compose ps\r"
+
+# Проверка API после перезапуска
+send "curl -s http://localhost:8000/health\r"
+
+# Переход в интерактивный режим
+interact 

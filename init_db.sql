@@ -1,22 +1,26 @@
--- Создание пользователя и базы данных (с проверками)
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'trendpulse') THEN
-        CREATE USER trendpulse WITH PASSWORD 'trendpulse123';
-    END IF;
-END
-$$;
+-- Инициализация базы данных TrendPulse AI
 
--- Создание базы данных (если не существует)
-SELECT 'CREATE DATABASE trendpulse_db OWNER trendpulse'
-WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'trendpulse_db')\gexec
+-- Создание пользователя базы данных
+CREATE USER trendpulse WITH PASSWORD '[ВАШ_ПАРОЛЬ_БАЗЫ]';
 
--- Подключение к созданной базе данных
+-- Создание базы данных
+CREATE DATABASE trendpulse_db OWNER trendpulse;
+
+-- Предоставление прав пользователю
+GRANT ALL PRIVILEGES ON DATABASE trendpulse_db TO trendpulse;
+
+-- Подключение к базе данных
 \c trendpulse_db;
+
+-- Создание расширений
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Предоставление прав на схему public
 GRANT ALL ON SCHEMA public TO trendpulse;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO trendpulse;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO trendpulse;
+
+-- Создание таблиц (будут созданы автоматически через SQLAlchemy)
+-- Таблицы создаются в backend/models.py
+
+-- Настройка прав доступа
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO trendpulse;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO trendpulse; 

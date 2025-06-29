@@ -1,115 +1,80 @@
-# Инструкция по настройке TrendPulse AI на сервере
+# 🚀 Инструкции по настройке TrendPulse AI
 
-## 1. Подключение к серверу
+## 📋 Требования
+- Docker и Docker Compose
+- Git
+- Доступ к серверу
 
-```bash
-ssh root@45.142.122.145
-# Пароль: W5AV!54uq@5EMXLA
+## 🔑 Доступ к серверу
+- **IP:** trashy-leg
+- **Пользователь:** root
+- **Пароль:** [СКРЫТО]
+
+## 📁 Структура проекта
+```
+trendpulse-ai/
+├── backend/          # FastAPI backend
+├── bot/             # Telegram bot
+├── docker-compose.yml
+├── .env             # Конфигурация (создать)
+└── README.md
 ```
 
-## 2. Переход в директорию проекта
+## 🔧 Настройка
 
+### 1. Клонирование репозитория
 ```bash
-cd /opt/trendpulse-ai
+git clone https://github.com/Rozareoagro14/trendpulse-ai.git
+cd trendpulse-ai
 ```
 
-## 3. Проверка и исправление структуры файлов
+### 2. Создание .env файла
+Создайте файл `.env` в корне проекта:
 
-```bash
-# Проверяем структуру
-ls -la
-ls -la backend/
-ls -la bot/
+```env
+# Telegram Bot
+BOT_TOKEN=[ВАШ_ТОКЕН_БОТА]
 
-# Создаем недостающие файлы __init__.py
-echo "# Backend module" > backend/__init__.py
-echo "# Bot module" > bot/__init__.py
-
-# Проверяем содержимое основных файлов
-cat backend/main.py | head -10
-cat bot/main.py | head -10
-```
-
-## 4. Обновление файла .env с правильным токеном
-
-```bash
-cat > .env << 'EOF'
-# Telegram Bot Token
-BOT_TOKEN=7997361131:AAHPvGAAAxwgu5RxQaUOoOvZT79Ig-u3_4w
-
-# База данных
+# Database
 DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/trendpulse
 
-# Окружение
-ENVIRONMENT=production
-
-# API URL (для бота)
-API_URL=http://backend:8000
-EOF
+# API Settings
+API_HOST=0.0.0.0
+API_PORT=8000
+DEBUG=true
 ```
 
-## 5. Исправление Dockerfile для backend
+### 3. Получение токена бота
+1. Откройте Telegram
+2. Найдите @BotFather
+3. Отправьте `/newbot`
+4. Следуйте инструкциям
+5. Скопируйте полученный токен в `.env`
 
+### 4. Запуск системы
 ```bash
-cat > Dockerfile.backend << 'EOF'
-FROM python:3.11-slim
+# Сборка образов
+docker-compose build
 
-RUN apt-get update && apt-get install -y \
-    gcc g++ libpq-dev libffi-dev libssl-dev \
-    libxml2-dev libxslt1-dev libjpeg-dev libpng-dev \
-    libwebp-dev libcairo2-dev libpango1.0-dev \
-    libgdk-pixbuf2.0-dev shared-mime-info \
-    && rm -rf /var/lib/apt/lists/*
+# Запуск контейнеров
+docker-compose up -d
 
-WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY backend/ ./backend/
-COPY .env* ./
-
-RUN mkdir -p /app/reports /app/logs
-
-ENV PYTHONPATH=/app
-ENV PYTHONUNBUFFERED=1
-
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
-EOF
+# Проверка статуса
+docker-compose ps
 ```
 
-## 6. Исправление Dockerfile для bot
-
+### 5. Проверка работы
 ```bash
-cat > Dockerfile.bot << 'EOF'
-FROM python:3.11-slim
+# Проверка API
+curl http://localhost:8000/health
 
-RUN apt-get update && apt-get install -y \
-    gcc g++ libpq-dev libffi-dev libssl-dev curl \
-    && rm -rf /var/lib/apt/lists/*
-
-WORKDIR /app
-
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-COPY bot/ ./bot/
-COPY backend/ ./backend/
-COPY .env* ./
-
-RUN mkdir -p /app/logs
-
-ENV PYTHONPATH=/app
-ENV PYTHONUNBUFFERED=1
-
-CMD ["python", "bot/main.py"]
-EOF
+# Проверка бота
+# Отправьте /start в Telegram боту
 ```
 
-## 7. Обновление docker-compose.yml
+## 🐳 Docker Compose конфигурация
 
-```bash
-cat > docker-compose.yml << 'EOF'
+```yaml
 version: '3.8'
 
 services:
@@ -121,136 +86,190 @@ services:
       POSTGRES_PASSWORD: password
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    ports:
+      - "5432:5432"
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    ports:
-      - "8000:8000"
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/trendpulse
+    ports:
+      - "8000:8000"
     depends_on:
-      db:
-        condition: service_healthy
-    volumes:
-      - ./reports:/app/reports
-      - ./logs:/app/logs
-    restart: unless-stopped
+      - db
 
   bot:
     build:
       context: .
       dockerfile: Dockerfile.bot
     environment:
-      - BOT_TOKEN=7997361131:AAHPvGAAAxwgu5RxQaUOoOvZT79Ig-u3_4w
+      - BOT_TOKEN=[ВАШ_ТОКЕН_БОТА]
       - API_URL=http://backend:8000
     depends_on:
       - backend
-    volumes:
-      - ./logs:/app/logs
-    restart: unless-stopped
 
 volumes:
   postgres_data:
-EOF
 ```
 
-## 8. Остановка старых контейнеров
+## 📊 API Endpoints
 
+### Основные endpoints:
+- `GET /health` - Проверка здоровья API
+- `GET /api-info` - Информация об API
+- `GET /projects/` - Список проектов
+- `POST /projects/` - Создание проекта
+- `GET /contractors/` - Список подрядчиков
+- `GET /scenarios/` - Список сценариев
+
+### Примеры запросов:
 ```bash
-docker-compose down
+# Проверка здоровья
+curl http://localhost:8000/health
+
+# Создание проекта
+curl -X POST http://localhost:8000/projects/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Тестовый проект",
+    "description": "Описание проекта",
+    "project_type": "residential",
+    "location": "Москва",
+    "budget": 1000000,
+    "area": 100
+  }'
 ```
 
-## 9. Очистка Docker
+## 🤖 Telegram Bot
 
+### Команды бота:
+- `/start` - Начало работы
+- `/projects` - Мои проекты
+- `/contractors` - Подрядчики
+- `/scenarios` - Сценарии
+- `/help` - Помощь
+
+### Настройка бота:
+1. Создайте бота через @BotFather
+2. Получите токен
+3. Добавьте токен в `.env` файл
+4. Перезапустите контейнеры
+
+## 🔍 Мониторинг
+
+### Просмотр логов:
 ```bash
-docker system prune -f
-docker volume prune -f
-```
+# Все контейнеры
+docker-compose logs
 
-## 10. Пересборка и запуск контейнеров
+# Только backend
+docker-compose logs backend
 
-```bash
-docker-compose up --build -d
-```
+# Только bot
+docker-compose logs bot
 
-## 11. Проверка статуса
-
-```bash
-docker-compose ps
-```
-
-## 12. Просмотр логов
-
-```bash
+# Следить за логами
 docker-compose logs -f
 ```
 
-## 13. Проверка работы API
-
+### Проверка статуса:
 ```bash
-curl http://localhost:8000/health
+# Статус контейнеров
+docker-compose ps
+
+# Использование ресурсов
+docker stats
 ```
 
-## 14. Проверка работы бота
+## 🛠️ Устранение неполадок
 
-Найдите бота в Telegram: @trendpulse_aiv2_bot
-Отправьте команду `/start`
-
-## Диагностика проблем
-
-### Проверка содержимого контейнеров:
+### Проблема: Контейнеры не запускаются
 ```bash
-# Проверка backend контейнера
-docker exec -it trendpulse-ai_backend_1 ls -la /app
-docker exec -it trendpulse-ai_backend_1 ls -la /app/backend
+# Проверьте логи
+docker-compose logs
 
-# Проверка bot контейнера
-docker exec -it trendpulse-ai_bot_1 ls -la /app
-docker exec -it trendpulse-ai_bot_1 ls -la /app/bot
+# Пересоберите образы
+docker-compose build --no-cache
+
+# Удалите volumes и пересоздайте
+docker-compose down -v
+docker-compose up -d
 ```
 
-### Проверка логов конкретного сервиса:
+### Проблема: База данных не подключается
 ```bash
-docker-compose logs backend
-docker-compose logs bot
+# Проверьте переменные окружения
+docker-compose exec backend env | grep DATABASE
+
+# Проверьте доступность базы
+docker-compose exec backend ping db
 ```
 
-### Перезапуск конкретного сервиса:
+### Проблема: Бот не отвечает
 ```bash
-docker-compose restart backend
-docker-compose restart bot
+# Проверьте токен
+docker-compose exec bot env | grep BOT_TOKEN
+
+# Проверьте подключение к API
+docker-compose exec bot ping backend
 ```
 
-## Если проблемы остаются
+## 📝 Полезные команды
 
-1. Проверьте, что все файлы существуют:
 ```bash
-ls -la backend/
-ls -la bot/
-```
-
-2. Проверьте содержимое файлов:
-```bash
-head -5 backend/main.py
-head -5 bot/main.py
-```
-
-3. Проверьте права доступа:
-```bash
-chmod -R 755 backend/
-chmod -R 755 bot/
-```
-
-4. Пересоберите образы с нуля:
-```bash
+# Остановка системы
 docker-compose down
-docker system prune -af
-docker-compose up --build -d
-``` 
+
+# Перезапуск
+docker-compose restart
+
+# Обновление кода
+git pull
+docker-compose build
+docker-compose up -d
+
+# Очистка Docker
+docker system prune -a
+
+# Резервное копирование базы
+docker-compose exec db pg_dump -U postgres trendpulse > backup.sql
+
+# Восстановление базы
+docker-compose exec -T db psql -U postgres trendpulse < backup.sql
+```
+
+## 🔒 Безопасность
+
+### Рекомендации:
+1. Измените пароли по умолчанию
+2. Используйте HTTPS в продакшене
+3. Ограничьте доступ к портам
+4. Регулярно обновляйте зависимости
+5. Мониторьте логи на подозрительную активность
+
+### Переменные окружения для продакшена:
+```env
+DEBUG=false
+LOG_LEVEL=INFO
+SECRET_KEY=[СЛОЖНЫЙ_СЕКРЕТНЫЙ_КЛЮЧ]
+DATABASE_URL=[ПРОДАКШЕН_URL_БАЗЫ]
+```
+
+## 📞 Поддержка
+
+При возникновении проблем:
+1. Проверьте логи контейнеров
+2. Убедитесь в корректности .env файла
+3. Проверьте доступность всех сервисов
+4. Обратитесь к документации API
+
+## 🎯 Следующие шаги
+
+После успешной настройки:
+1. Создайте первый проект через бота
+2. Добавьте подрядчиков
+3. Сгенерируйте сценарии
+4. Настройте мониторинг
+5. Подготовьте к продакшену 

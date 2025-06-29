@@ -5,9 +5,9 @@ services:
   db:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: trendpulse
-      POSTGRES_PASSWORD: trendpulse123
       POSTGRES_DB: trendpulse_db
+      POSTGRES_USER: trendpulse
+      POSTGRES_PASSWORD: [ВАШ_ПАРОЛЬ_БАЗЫ]
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
@@ -25,7 +25,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://trendpulse:trendpulse123@db:5432/trendpulse_db
+      - DATABASE_URL=postgresql+asyncpg://trendpulse:[ВАШ_ПАРОЛЬ_БАЗЫ]@db:5432/trendpulse_db
     depends_on:
       db:
         condition: service_healthy
@@ -40,7 +40,7 @@ services:
       context: .
       dockerfile: Dockerfile.bot
     environment:
-      - BOT_TOKEN=${BOT_TOKEN}
+      - BOT_TOKEN=[ВАШ_ТОКЕН_БОТА]
       - API_URL=http://backend:8000
     depends_on:
       - backend
